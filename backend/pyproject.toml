@@ -1,0 +1,21 @@
+[project]
+name = "me-as-a-service-backend"
+version = "0.1.0"
+description = "Grounded RAG agent backend — ingest, hybrid retrieval, grounded answers."
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40.0",
+    "voyageai>=0.3.0",
+    "supabase>=2.9.0",
+    "pydantic-settings>=2.5.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0.0"]
+
+[tool.uv]
+package = false  # an application, not a distributable package — uv manages the env only
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

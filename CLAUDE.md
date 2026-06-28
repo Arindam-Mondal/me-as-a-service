@@ -45,16 +45,33 @@ See `TECHNICAL_SPEC.md` §3 for the full tree, §4 for the data model, §8 for A
 
 ---
 
-## 3. Environment Setup (for a fresh machine)
+## 3. Environment Setup (Slice 1 — backend RAG loop)
 
-1. Copy `.env.example` → `.env`; fill: `ANTHROPIC_API_KEY`, `VOYAGE_API_KEY`,
-   `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `OWNER_EMAIL`.
-2. **Backend:** `cd backend` → install deps (uv/pip) → `uvicorn app.main:app --reload`.
-3. **DB:** apply `supabase/migrations/` (Supabase CLI or MCP); enable `vector` extension.
-4. **Ingest:** `python scripts/ingest.py` to load `content/*.md`.
-5. **Frontend:** `cd frontend` → `npm install` → `npm run dev`; set `VITE_API_BASE_URL`.
+> Tooling is **uv** (`pyproject.toml` + `uv.lock`). uv manages the venv **and** the
+> Python version — no need for the machine's `py -3` (`python` here is 2.7). Pinned to
+> **Python 3.12** via `backend/.python-version`. `backend/.venv` is gitignored;
+> `uv.lock` + `.python-version` are committed.
 
-> Update this section with the exact commands once scaffolding (Phase 1) is done.
+```bash
+# 1. Backend env + deps (run from repo root)
+cd backend
+uv python pin 3.12      # one-time; uv installs 3.12 if it's missing
+uv sync                 # creates .venv + uv.lock, installs deps + dev group
+
+# 2. Secrets
+cp .env.example .env        # then fill ANTHROPIC_API_KEY, VOYAGE_API_KEY,
+                            # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+
+# 3. Database (one-time): paste supabase/migrations/0001_init.sql into the
+#    Supabase SQL Editor and run it. Creates `documents` + `hybrid_search` RPC.
+
+# 4. Ingest the corpus and query
+uv run python scripts/ingest.py
+uv run python scripts/query.py "What are Arindam's skills?"
+
+# Tests
+uv run pytest
+```
 
 ---
 
@@ -68,36 +85,40 @@ Status key: ✅ done · 🟡 in progress · ⬜ not started
 - ✅ `CLAUDE.md` (this file)
 - ⬜ Owner review of docs
 
-### Phase 1 — Scaffold
-- ⬜ Repo layout (`backend/`, `frontend/`, `content/`, `supabase/`)
-- ⬜ `README.md`, `.env.example`
-- ⬜ Backend skeleton (FastAPI app, config, `/api/health`)
+### Phase 1 — Scaffold  *(backend subset done in Slice 1)*
+- ✅ Repo layout (`backend/`, `content/`, `supabase/`) — frontend dir later
+- ✅ `.env.example`, `.gitignore`, `pyproject.toml` + `uv.lock` (uv tooling, Python 3.12)
+- ⬜ `README.md`
+- ⬜ Backend FastAPI app + `/api/health` (HTTP layer — later slice; CLI-first for now)
 - ⬜ Backend `Dockerfile`
 - ⬜ Frontend skeleton (Vite + TS, base layout)
-- ⬜ Test runners wired (pytest, Vitest)
+- ✅ Test runner wired (pytest); Vitest later
 
-### Phase 2 — Supabase schema
-- ⬜ Migration: `documents` (+ pgvector HNSW, FTS GIN)
+### Phase 2 — Supabase schema  *(documents only in Slice 1)*
+- ✅ Migration written: `documents` (+ pgvector HNSW, FTS GIN) — `0001_init.sql`
+- 🟡 **Owner action:** apply `0001_init.sql` in Supabase SQL Editor
 - ⬜ Migration: `leads`
 - ⬜ Migration: `rate_limits`
-- ⬜ RLS policies on all tables
-- ⬜ `hybrid_search` RPC
+- ⬜ RLS policies on all tables *(deferred — backend uses service-role key)*
+- ✅ `hybrid_search` RPC (vector + FTS + RRF) written in `0001_init.sql`
 
 ### Phase 3 — Ingestion
-- ⬜ `embedder.py` (Voyage wrapper)
-- ⬜ `scripts/ingest.py` (chunk → embed → upsert)
-- ⬜ Sample `content/about.md`
-- ⬜ Tests: chunking/overlap/metadata
+- ✅ `embedder.py` (Voyage wrapper)
+- ✅ `scripts/ingest.py` (chunk → embed → replace-by-source)
+- ✅ Sample `content/about.md` (placeholder; owner edits)
+- ✅ Tests: chunking (5 passing)
+- 🟡 **Owner action:** run `ingest.py` (needs keys + migration applied)
 
 ### Phase 4 — Retrieval
-- ⬜ `retrieval.py` (hybrid + RRF, relevance gate)
-- ⬜ Tests: fusion ranks relevant chunk; gate triggers on weak retrieval
+- ✅ `retrieval.py` (hybrid + RRF via RPC, empty-result gate)
+- ⬜ Automated retrieval test with seeded rows (verified manually via CLI in Slice 1)
 
 ### Phase 5 — Answer service
-- ⬜ Grounded system prompt + context assembly
-- ⬜ Claude streaming over SSE
-- ⬜ Decline path (insufficient context)
-- ⬜ `capture_lead` tool + tool event over SSE
+- ✅ Grounded system prompt + context assembly (`answer.py`)
+- ✅ Decline path (no-context short-circuit)
+- ✅ CLI query path (`scripts/query.py`)
+- ⬜ Claude **streaming over SSE** (HTTP slice)
+- ⬜ `capture_lead` tool + tool event over SSE (later slice)
 - ⬜ Tests: grounded vs decline (mocked client)
 
 ### Phase 6 — Rate limiting
@@ -158,3 +179,17 @@ Append a short entry each session: date — what changed — next step.
 - **2026-06-28** — Brainstormed scope; locked stack/decisions; wrote `PRD.md`,
   `TECHNICAL_SPEC.md`, and this `CLAUDE.md`. **Next:** owner reviews docs, then Phase 1
   scaffolding.
+- **2026-06-28 (Slice 1)** — Built the backend RAG loop, CLI-first: `content/about.md`
+  placeholder, `supabase/migrations/0001_init.sql` (`documents` + `hybrid_search` RRF
+  RPC), and backend modules (`config`, `supabase_client`, `pgvector`, `chunking`,
+  `embedder`, `retrieval`, `answer`) + `scripts/ingest.py` & `scripts/query.py`.
+  Chunking tests pass (5); full import/wiring smoke-tested with dummy env. Embeddings
+  passed to Postgres as bracketed-string vectors (PostgREST-safe). **Owner actions to
+  finish verification:** (1) `cp backend/.env.example backend/.env` + fill keys; (2) run
+  `0001_init.sql` in Supabase SQL Editor; (3) `python scripts/ingest.py`; (4)
+  `python scripts/query.py "..."`. **Next slice:** FastAPI `/api/chat` + SSE streaming,
+  reusing `retrieval`/`answer`.
+- **2026-06-28 (tooling)** — Migrated backend from `requirements.txt` + stdlib venv to
+  **uv** (`pyproject.toml` + `uv.lock`), pinned **Python 3.12** (`.python-version`).
+  Folded `pytest.ini` into `pyproject.toml`; removed `requirements.txt`/`pytest.ini`.
+  `uv sync` + `uv run pytest` green (5 passing), imports OK. No app-code changes.

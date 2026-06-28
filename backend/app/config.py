@@ -1,0 +1,40 @@
+"""Application configuration loaded from environment / backend/.env.
+
+All secrets and tunables live here so nothing is hardcoded (TECHNICAL_SPEC.md §10).
+"""
+
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# backend/.env (config.py is at backend/app/config.py -> parents[1] == backend/)
+_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=str(_ENV_FILE),
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    # AI providers
+    anthropic_api_key: str
+    voyage_api_key: str
+
+    # Supabase (service-role key is backend-only)
+    supabase_url: str
+    supabase_service_role_key: str
+
+    # Models
+    chat_model: str = "claude-haiku-4-5"
+    embedding_model: str = "voyage-3"
+
+    # Retrieval tuning
+    retrieval_top_n: int = 20  # candidates per leg
+    retrieval_top_k: int = 5   # final fused chunks
+    rrf_k: int = 60            # RRF constant
+
+
+settings = Settings()  # type: ignore[call-arg]

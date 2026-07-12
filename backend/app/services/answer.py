@@ -8,7 +8,7 @@ tool is added in a later slice.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Iterator
 
 OWNER_NAME = "Arindam"
 
@@ -39,6 +39,13 @@ def _format_context(chunks: list[dict]) -> str:
     return "\n\n".join(blocks)
 
 
+def _user_content(question: str, chunks: list[dict]) -> str:
+    return (
+        f"<context>\n{_format_context(chunks)}\n</context>\n\n"
+        f"Visitor question: {question}"
+    )
+
+
 def answer(
     question: str,
     chunks: list[dict],
@@ -51,15 +58,34 @@ def answer(
     if not chunks:
         return DECLINE_MESSAGE
 
-    context = _format_context(chunks)
-    user_content = (
-        f"<context>\n{context}\n</context>\n\n"
-        f"Visitor question: {question}"
-    )
     message = client.messages.create(
         model=model,
         max_tokens=max_tokens,
         system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_content}],
+        messages=[{"role": "user", "content": _user_content(question, chunks)}],
     )
     return "".join(block.text for block in message.content if block.type == "text")
+
+
+def stream_answer(
+    question: str,
+    chunks: list[dict],
+    *,
+    client: Any,
+    model: str,
+    max_tokens: int = 1024,
+) -> Iterator[str]:
+    """Yield the grounded answer as text deltas, or the decline message when there
+    is no context. Mirrors ``answer()`` but streams via the Anthropic SDK."""
+    if not chunks:
+        yield DECLINE_MESSAGE
+        return
+
+    with client.messages.stream(
+        model=model,
+        max_tokens=max_tokens,
+        system=SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": _user_content(question, chunks)}],
+    ) as stream:
+        for text in stream.text_stream:
+            yield text

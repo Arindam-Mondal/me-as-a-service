@@ -89,7 +89,8 @@ Status key: ✅ done · 🟡 in progress · ⬜ not started
 - ✅ Repo layout (`backend/`, `content/`, `supabase/`) — frontend dir later
 - ✅ `.env.example`, `.gitignore`, `pyproject.toml` + `uv.lock` (uv tooling, Python 3.12)
 - ⬜ `README.md`
-- ⬜ Backend FastAPI app + `/api/health` (HTTP layer — later slice; CLI-first for now)
+- 🟡 Backend FastAPI app + `/api/health` (**Slice 2 in progress** — deps + config CORS
+  done; `main.py`/routers/`sse.py`/`deps.py`/`models.py` being written)
 - ⬜ Backend `Dockerfile`
 - ⬜ Frontend skeleton (Vite + TS, base layout)
 - ✅ Test runner wired (pytest); Vitest later
@@ -117,9 +118,9 @@ Status key: ✅ done · 🟡 in progress · ⬜ not started
 - ✅ Grounded system prompt + context assembly (`answer.py`)
 - ✅ Decline path (no-context short-circuit)
 - ✅ CLI query path (`scripts/query.py`)
-- ⬜ Claude **streaming over SSE** (HTTP slice)
+- 🟡 Claude **streaming over SSE** (**Slice 2 in progress** — `stream_answer()` + `/api/chat`)
 - ⬜ `capture_lead` tool + tool event over SSE (later slice)
-- ⬜ Tests: grounded vs decline (mocked client)
+- 🟡 Tests: grounded vs decline (mocked client) — `test_chat_api.py` in Slice 2
 
 ### Phase 6 — Rate limiting
 - ⬜ `rate_limit.py` (session cookie issue, atomic upserts)
@@ -199,3 +200,10 @@ Append a short entry each session: date — what changed — next step.
   github.com/Arindam-Mondal). **RAG loop verified end-to-end:** semantic (FICO, fitness),
   lexical (Cougar), and decline (off-doc) queries all correct and grounded. **Next slice:**
   FastAPI `/api/chat` + SSE.
+- **2026-07-12 (Slice 2 — in progress)** — Started the FastAPI + SSE streaming slice
+  (plan approved). Done so far: added `fastapi` + `uvicorn[standard]` to `pyproject.toml`;
+  added `allowed_origins` (CORS) to `config.py`. **Still to write:** `app/main.py`,
+  `app/sse.py`, `app/deps.py`, `app/models.py`, `app/routers/{health,chat}.py`,
+  `stream_answer()` in `answer.py`, and `tests/{conftest,test_chat_api}.py`; then `uv sync`
+  + verify (curl SSE + pytest). Design: stays synchronous; reuses `retrieval`/`answer`;
+  issues `sid` cookie as rate-limit foundation.

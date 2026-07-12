@@ -36,5 +36,13 @@ class Settings(BaseSettings):
     retrieval_top_k: int = 5   # final fused chunks
     rrf_k: int = 60            # RRF constant
 
+    # HTTP / CORS — comma-separated allowed frontend origins (cookies need explicit
+    # origins + allow_credentials, so "*" won't work).
+    allowed_origins: str = "http://localhost:5173,http://localhost:3000"
+
+    @property
+    def allowed_origins_list(self) -> list[str]:
+        return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+
 
 settings = Settings()  # type: ignore[call-arg]

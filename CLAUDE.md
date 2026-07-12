@@ -96,7 +96,7 @@ Status key: ✅ done · 🟡 in progress · ⬜ not started
 
 ### Phase 2 — Supabase schema  *(documents only in Slice 1)*
 - ✅ Migration written: `documents` (+ pgvector HNSW, FTS GIN) — `0001_init.sql`
-- 🟡 **Owner action:** apply `0001_init.sql` in Supabase SQL Editor
+- ✅ **Applied:** `0001_init.sql` run in Supabase SQL Editor (documents + hybrid_search live)
 - ⬜ Migration: `leads`
 - ⬜ Migration: `rate_limits`
 - ⬜ RLS policies on all tables *(deferred — backend uses service-role key)*
@@ -105,9 +105,9 @@ Status key: ✅ done · 🟡 in progress · ⬜ not started
 ### Phase 3 — Ingestion
 - ✅ `embedder.py` (Voyage wrapper)
 - ✅ `scripts/ingest.py` (chunk → embed → replace-by-source)
-- ✅ Sample `content/about.md` (placeholder; owner edits)
+- ✅ `content/about.md` — **real owner profile** (13 sections; 14 chunks). Superseded placeholder.
 - ✅ Tests: chunking (5 passing)
-- 🟡 **Owner action:** run `ingest.py` (needs keys + migration applied)
+- ✅ Ingest + query verified end-to-end (keys filled, `0001_init.sql` applied in Supabase)
 
 ### Phase 4 — Retrieval
 - ✅ `retrieval.py` (hybrid + RRF via RPC, empty-result gate)
@@ -193,3 +193,9 @@ Append a short entry each session: date — what changed — next step.
   **uv** (`pyproject.toml` + `uv.lock`), pinned **Python 3.12** (`.python-version`).
   Folded `pytest.ini` into `pyproject.toml`; removed `requirements.txt`/`pytest.ini`.
   `uv sync` + `uv run pytest` green (5 passing), imports OK. No app-code changes.
+- **2026-07-12** — Owner filled `.env` (Supabase new-format **Secret** key = service role),
+  applied `0001_init.sql`. Replaced placeholder `content/about.md` with the **real profile**
+  (13 sections → 14 chunks; contact = LinkedIn + connect form, no email/phone; GitHub
+  github.com/Arindam-Mondal). **RAG loop verified end-to-end:** semantic (FICO, fitness),
+  lexical (Cougar), and decline (off-doc) queries all correct and grounded. **Next slice:**
+  FastAPI `/api/chat` + SSE.

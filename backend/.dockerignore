@@ -1,0 +1,13 @@
+.venv
+tests
+scripts
+.env
+.env.*
+.python-version.bak
+__pycache__
+**/__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+Dockerfile
+.dockerignore

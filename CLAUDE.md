@@ -7,8 +7,13 @@
 
 - **Project:** Me-as-a-Service — a live AI agent that answers questions about the owner,
   grounded strictly in owner-provided documents, with rate limiting and agentic lead capture.
-- **Specs:** [`PRD.md`](./PRD.md) (product), [`TECHNICAL_SPEC.md`](./TECHNICAL_SPEC.md) (engineering).
-- **Last updated:** 2026-06-28
+- **Specs:** [`PRD.md`](./PRD.md) (product), [`TECHNICAL_SPEC.md`](./TECHNICAL_SPEC.md) (engineering),
+  [`UI_TECHNICAL_SPEC.md`](./UI_TECHNICAL_SPEC.md) (frontend/theme).
+- **UI theme:** Tactile Neo-Brutalism "Zine" — beige paper, black ink outlines + hard shadows,
+  Riso-Vermilion `#FF4D2E` accent, hand-drawn doodles; Shantell Sans + Hanken Grotesk; mobile-first,
+  light-only. Reusable theme skill: [`.claude/skills/zine-theme/SKILL.md`](./.claude/skills/zine-theme/SKILL.md).
+  Build UI via the `impeccable` + `frontend-design` skills.
+- **Last updated:** 2026-07-12
 
 ---
 
@@ -89,11 +94,11 @@ Status key: ✅ done · 🟡 in progress · ⬜ not started
 - ✅ Repo layout (`backend/`, `content/`, `supabase/`) — frontend dir later
 - ✅ `.env.example`, `.gitignore`, `pyproject.toml` + `uv.lock` (uv tooling, Python 3.12)
 - ⬜ `README.md`
-- 🟡 Backend FastAPI app + `/api/health` (**Slice 2 in progress** — deps + config CORS
-  done; `main.py`/routers/`sse.py`/`deps.py`/`models.py` being written)
-- ⬜ Backend `Dockerfile`
-- ⬜ Frontend skeleton (Vite + TS, base layout)
-- ✅ Test runner wired (pytest); Vitest later
+- ✅ Backend FastAPI app + `/api/health` (Slice 2 — `main.py`, CORS, `deps.py`,
+  `models.py`, `sse.py`, `version.py`, `routers/{health,chat}.py`; verified live)
+- ✅ Backend `Dockerfile` (+ `.dockerignore`) for Render Docker runtime
+- ✅ Frontend skeleton (Vite + TS, base layout) — full zine UI built in Phase 8
+- ✅ Test runner wired (pytest 10 passing; Vitest 5 passing)
 
 ### Phase 2 — Supabase schema  *(documents only in Slice 1)*
 - ✅ Migration written: `documents` (+ pgvector HNSW, FTS GIN) — `0001_init.sql`
@@ -118,9 +123,9 @@ Status key: ✅ done · 🟡 in progress · ⬜ not started
 - ✅ Grounded system prompt + context assembly (`answer.py`)
 - ✅ Decline path (no-context short-circuit)
 - ✅ CLI query path (`scripts/query.py`)
-- 🟡 Claude **streaming over SSE** (**Slice 2 in progress** — `stream_answer()` + `/api/chat`)
+- ✅ Claude **streaming over SSE** (`stream_answer()` + `POST /api/chat`; token/done/error events)
 - ⬜ `capture_lead` tool + tool event over SSE (later slice)
-- 🟡 Tests: grounded vs decline (mocked client) — `test_chat_api.py` in Slice 2
+- ✅ Tests: grounded vs decline (mocked client) — `test_chat_api.py` (5 passing) + hermetic `conftest.py`
 
 ### Phase 6 — Rate limiting
 - ⬜ `rate_limit.py` (session cookie issue, atomic upserts)
@@ -133,24 +138,33 @@ Status key: ✅ done · 🟡 in progress · ⬜ not started
 - ⬜ `GET/PATCH /api/admin/leads` (JWT-gated, OWNER_EMAIL)
 - ⬜ Tests: insert, validation, auth required
 
-### Phase 8 — Frontend (public)
-- ⬜ `ProfilePanel` (data-driven `profile.ts`)
-- ⬜ `ChatPanel` + `MessageList` (SSE streaming, starters)
-- ⬜ `ConnectForm` (triggered by `capture_lead`)
-- ⬜ `LimitNotice`
-- ⬜ Responsive layout + distinctive visual design
-- ⬜ Tests: stream render, form validation, limit notice
+### Phase 8 — Frontend (public)  *(theme + spec locked — see `UI_TECHNICAL_SPEC.md`)*
+- ✅ Scaffold (Vite+TS, `@fontsource-variable` Shantell+Hanken, tokens.css/global.css,
+  AppShell + page-frame, `profile.ts`). Build + typecheck green.
+- ✅ Doodle SVG kit (`components/doodles/` — ring, squiggle, arrow, sparkle, bubble, gh, in, send, ink)
+- ✅ `ProfilePanel` / `Avatar` (doodle ring + initials fallback) / `SocialLinks`
+- ✅ `ChatPanel` + `MessageList` + `Message` (markdown+caret) + `Composer` + `StarterQuestions`
+      — real SSE streaming via `lib/streamChat.ts` + `useChatStream` hook
+- ✅ `ConnectForm` (native `<dialog>`, client validation) — `capture_lead` auto-trigger + `POST /api/leads` are later slices
+- ✅ `LimitNotice` (client wired to HTTP 429; backend 429 lands in Phase 6)
+- ✅ Responsive layout (mobile stacked → two-panel desktop spread) + zine visual design
+- 🟡 Tests: `streamChat` parsing (3) + App render/connect (2) passing; form-validation + limit-notice
+      unit tests still to add
 
 ### Phase 9 — Admin dashboard
 - ⬜ Supabase Auth login
 - ⬜ Leads table (list, mark read/handled)
 
-### Phase 10 — Deploy
-- ⬜ Supabase live (migrations + auth + ingest)
-- ⬜ Backend on Render (env wired)
-- ⬜ Frontend on Vercel (env wired)
+### Phase 10 — Deploy  *(config prepared — see `DEPLOY.md`)*
+- ✅ Supabase live (`0001_init.sql` applied; corpus ingested)
+- ✅ Deploy config prepared: `backend/Dockerfile` + `.dockerignore`; cross-site cookie
+  (`COOKIE_SAMESITE`/`COOKIE_SECURE`) + `ALLOWED_ORIGIN_REGEX` in `config.py`/`main.py`/`chat.py`;
+  `frontend/vercel.json`; `DEPLOY.md` runbook
+- ⬜ Backend on Render (owner: create Docker service + env — runbook step 1)
+- ⬜ Frontend on Vercel (owner: import repo, set `VITE_API_BASE` — runbook step 2)
 - ⬜ Custom domain
-- ⬜ End-to-end smoke test (PRD §6 flows)
+- ⬜ End-to-end smoke test (PRD §6 flows) after deploy
+- ⚠️ **No rate limiting yet (Phase 6)** — public URL = uncapped provider spend; gate before wide sharing
 
 ---
 
@@ -169,7 +183,8 @@ Status key: ✅ done · 🟡 in progress · ⬜ not started
 - Profile copy: name, headline, catchy bio, avatar, social links.
 - Corpus content for `content/*.md` (about, experience, projects).
 - Suggested starter questions.
-- Visual brand direction (palette, typography) — decided in Phase 8.
+- ✅ Visual brand direction — **decided**: Tactile Neo-Brutalism "Zine" (see top of file +
+  `UI_TECHNICAL_SPEC.md`). Still needed: avatar image; confirm starter questions + headline/bio microcopy.
 
 ---
 
@@ -207,3 +222,36 @@ Append a short entry each session: date — what changed — next step.
   `stream_answer()` in `answer.py`, and `tests/{conftest,test_chat_api}.py`; then `uv sync`
   + verify (curl SSE + pytest). Design: stays synchronous; reuses `retrieval`/`answer`;
   issues `sid` cookie as rate-limit foundation.
+- **2026-07-12 (Slice 2 — DONE ✅)** — Completed + verified the FastAPI + SSE slice. Wrote
+  `app/{main,deps,models,sse,version}.py` and `app/routers/{health,chat}.py`;
+  `stream_answer()` streams Anthropic text deltas as `token` SSE frames → `done`, with an
+  `error` frame on failure; `/api/chat` plants an httpOnly `sid` cookie (rate-limit
+  foundation). Tests: `tests/{conftest,test_chat_api}.py` — 5 passing (health, token
+  stream, decline, error, 422 validation), fully mocked/hermetic. **Verified LIVE:**
+  `GET /api/health` OK; `POST /api/chat` streamed a real grounded answer (Voyage→Supabase
+  hybrid→Claude Haiku) about Arindam's skills, terminating cleanly. **Next:** frontend —
+  UI theme + tech spec first (this session).
+- **2026-07-12 (UI planning — in progress)** — Kicked off Phase 8 frontend planning.
+  Locked visual direction: **Tactile Neo-Brutalism "Zine" aesthetic** (beige/paper base +
+  heavy black outlines + hand-drawn doodle overlays), **mobile-first & responsive**. Using
+  the `impeccable` + `frontend-design` skills for craft. Producing `UI_TECHNICAL_SPEC.md`
+  and a reusable theme skill file. **Next:** confirm accent color / fonts / dark-mode forks,
+  then write the two design docs, then build the React UI.
+- **2026-07-12 (Phase 8 UI — built ✅)** — Locked forks: **Riso Vermilion `#FF4D2E`** accent,
+  **Shantell Sans + Hanken Grotesk**, **light-only**. Wrote `UI_TECHNICAL_SPEC.md` +
+  `.claude/skills/zine-theme/SKILL.md`. Built the full React+Vite+TS `frontend/`: tokens +
+  global zine CSS, doodle SVG kit, `streamChat`/`useChatStream` (fetch+ReadableStream SSE),
+  ProfilePanel/Avatar/SocialLinks, ChatPanel/MessageList/Message(markdown+caret)/Composer/
+  StarterQuestions, ConnectForm (`<dialog>`), LimitNotice, AppShell page-frame. **Verified:**
+  `npm run build` (tsc+vite) green, fonts bundled; `npm test` 5 passing (streamChat parse ×3,
+  App render + connect ×2); dev server serves on :5173. **Not yet done:** live browser QA with
+  backend :8000, avatar image, `POST /api/leads` wiring (Phase 7), backend 429 (Phase 6).
+  **Next:** open http://localhost:5173 against the running backend for real chat + a11y/responsive polish.
+- **2026-07-12 (deploy prep ✅)** — Prepared full-stack deploy (frontend→Vercel, backend→Render).
+  Backend: `Dockerfile` + `.dockerignore` (Render Docker, serves API only from Supabase);
+  env-driven cross-site cookie (`cookie_samesite`/`cookie_secure`) + CORS `allowed_origin_regex`
+  (covers `*.vercel.app` previews) in `config.py`/`main.py`/`chat.py`; `.env.example` updated.
+  Frontend: `vercel.json` SPA fallback; deploys point `VITE_API_BASE` at the Render URL. Wrote
+  `DEPLOY.md` runbook. **Verified:** `uv run pytest` 10 pass, `npm run build` green. **Owner to
+  do (needs your logins):** run the DEPLOY.md steps (Render service + Vercel import + env vars).
+  **Risk flagged:** no rate limiting yet (Phase 6) → cap before making the URL public.

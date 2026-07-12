@@ -1,0 +1,61 @@
+/* Zine theme design tokens — see .claude/skills/zine-theme/SKILL.md + UI_TECHNICAL_SPEC.md §2.
+   Hex is the source of truth; OKLCH noted for tuning. Light-only. */
+:root {
+  /* Surfaces — the "paper" */
+  --paper: #f4ecd8; /* oklch(0.93 0.03 92)  page background        */
+  --paper-2: #ece3cc; /* oklch(0.91 0.035 92) panels / raised cards */
+  --paper-edge: #e3d8bc; /* oklch(0.88 0.04 92)  hairline / deep insets */
+
+  /* Ink — text + borders + shadows */
+  --ink: #141210; /* oklch(0.18 0.006 70) primary text, borders, shadow */
+  --ink-soft: #4a443a; /* oklch(0.38 0.02 80)  secondary text (>=4.5:1 on paper) */
+
+  /* Accent — Riso Vermilion (fills / borders / underlines / doodle pops only) */
+  --accent: #ff4d2e; /* oklch(0.66 0.21 32) */
+  --accent-deep: #d93a1e; /* oklch(0.58 0.20 32) hover / active fill */
+  --on-accent: #141210; /* text ON vermilion = INK, bold (>=4.4:1) */
+
+  /* Feedback (kept in-palette, still bordered) */
+  --ok: #2e7d46;
+  --warn: #c77400;
+  --error: #c02a1b;
+
+  /* Brutalist structure */
+  --border-w: 3px;
+  --border-w-sm: 2px;
+  --radius: 4px;
+  --shadow: 4px 4px 0 0 var(--ink);
+  --shadow-sm: 2px 2px 0 0 var(--ink);
+  --shadow-lg: 6px 6px 0 0 var(--ink);
+
+  /* Spacing — 4px base, varied for rhythm */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2rem;
+  --s-8: 3rem;
+  --s-10: 4rem;
+
+  /* Type */
+  --font-display: "Shantell Sans Variable", "Comic Sans MS", cursive;
+  --font-body: "Hanken Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur: 220ms;
+  --dur-slow: 420ms;
+
+  /* Z-index scale (semantic) */
+  --z-sticky: 100;
+  --z-backdrop: 200;
+  --z-dialog: 300;
+  --z-toast: 400;
+  --z-tooltip: 500;
+
+  /* Layout */
+  --page-max: 1240px;
+  --profile-w: 38%;
+}

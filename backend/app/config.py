@@ -39,6 +39,14 @@ class Settings(BaseSettings):
     # HTTP / CORS — comma-separated allowed frontend origins (cookies need explicit
     # origins + allow_credentials, so "*" won't work).
     allowed_origins: str = "http://localhost:5173,http://localhost:3000"
+    # Optional regex to allow dynamic origins (e.g. Vercel preview deploys):
+    # ALLOWED_ORIGIN_REGEX="https://.*\\.vercel\\.app". Empty = disabled.
+    allowed_origin_regex: str = ""
+
+    # Session cookie flags — cross-site (Vercel <-> Render) needs SameSite=None; Secure.
+    # Local dev defaults to lax/insecure.
+    cookie_samesite: str = "lax"  # "lax" | "none" | "strict"
+    cookie_secure: bool = False
 
     @property
     def allowed_origins_list(self) -> list[str]:

@@ -65,13 +65,14 @@ def chat(req: ChatRequest, request: Request) -> StreamingResponse:
             "X-Accel-Buffering": "no",  # disable proxy buffering (nginx/render)
         },
     )
-    # httpOnly + SameSite=Lax for local dev. Cross-site (Vercel <-> Render) will
-    # need SameSite=None; Secure — handled in the deploy slice.
+    # httpOnly always. SameSite/Secure are env-driven: local dev = lax/insecure;
+    # cross-site prod (Vercel <-> Render) sets COOKIE_SAMESITE=none, COOKIE_SECURE=true.
     response.set_cookie(
         "sid",
         sid,
         max_age=_SID_MAX_AGE,
         httponly=True,
-        samesite="lax",
+        samesite=settings.cookie_samesite,  # type: ignore[arg-type]
+        secure=settings.cookie_secure,
     )
     return response

@@ -8,7 +8,9 @@
 - **Project:** Me-as-a-Service — a live AI agent that answers questions about the owner,
   grounded strictly in owner-provided documents, with rate limiting and agentic lead capture.
 - **Specs:** [`PRD.md`](./PRD.md) (product), [`TECHNICAL_SPEC.md`](./TECHNICAL_SPEC.md) (engineering),
-  [`UI_TECHNICAL_SPEC.md`](./UI_TECHNICAL_SPEC.md) (frontend/theme).
+  [`UI_TECHNICAL_SPEC.md`](./UI_TECHNICAL_SPEC.md) (frontend/theme),
+  [`RATE_LIMITING_SPEC.md`](./RATE_LIMITING_SPEC.md) (guardrails), [`README.md`](./README.md)
+  (project overview + design rationale), [`DEPLOY.md`](./DEPLOY.md) (deploy runbook).
 - **UI theme:** Tactile Neo-Brutalism "Zine" — beige paper, black ink outlines + hard shadows,
   Riso-Vermilion `#FF4D2E` accent, hand-drawn doodles; Shantell Sans + Hanken Grotesk; mobile-first,
   light-only. Reusable theme skill: [`.claude/skills/zine-theme/SKILL.md`](./.claude/skills/zine-theme/SKILL.md).
@@ -93,18 +95,18 @@ Status key: ✅ done · 🟡 in progress · ⬜ not started
 ### Phase 1 — Scaffold  *(backend subset done in Slice 1)*
 - ✅ Repo layout (`backend/`, `content/`, `supabase/`) — frontend dir later
 - ✅ `.env.example`, `.gitignore`, `pyproject.toml` + `uv.lock` (uv tooling, Python 3.12)
-- ⬜ `README.md`
+- ✅ `README.md` — project overview + full design-decision rationale (recruiter/engineer-facing)
 - ✅ Backend FastAPI app + `/api/health` (Slice 2 — `main.py`, CORS, `deps.py`,
   `models.py`, `sse.py`, `version.py`, `routers/{health,chat}.py`; verified live)
 - ✅ Backend `Dockerfile` (+ `.dockerignore`) for Render Docker runtime
 - ✅ Frontend skeleton (Vite + TS, base layout) — full zine UI built in Phase 8
-- ✅ Test runner wired (pytest 10 passing; Vitest 5 passing)
+- ✅ Test runner wired (pytest 19 passing; Vitest 5 passing)
 
 ### Phase 2 — Supabase schema  *(documents only in Slice 1)*
 - ✅ Migration written: `documents` (+ pgvector HNSW, FTS GIN) — `0001_init.sql`
 - ✅ **Applied:** `0001_init.sql` run in Supabase SQL Editor (documents + hybrid_search live)
 - ⬜ Migration: `leads`
-- ⬜ Migration: `rate_limits`
+- 🟡 Migration: `rate_limits` — **written** (`0002_rate_limits.sql`, table + `check_rate_limit` RPC); ⬜ owner to apply in Supabase SQL editor
 - ⬜ RLS policies on all tables *(deferred — backend uses service-role key)*
 - ✅ `hybrid_search` RPC (vector + FTS + RRF) written in `0001_init.sql`
 
@@ -127,10 +129,17 @@ Status key: ✅ done · 🟡 in progress · ⬜ not started
 - ⬜ `capture_lead` tool + tool event over SSE (later slice)
 - ✅ Tests: grounded vs decline (mocked client) — `test_chat_api.py` (5 passing) + hermetic `conftest.py`
 
-### Phase 6 — Rate limiting
-- ⬜ `rate_limit.py` (session cookie issue, atomic upserts)
-- ⬜ Enforce before provider calls; 429 contract
-- ⬜ Tests: boundaries + daily reset
+### Phase 6 — Rate limiting  *(implemented — see `RATE_LIMITING_SPEC.md`)*
+- ✅ Design: basic/cost-first; per-session (10/day) + global daily (100/day), UTC-reset;
+  increment-before-stream; env-tunable + `RATE_LIMIT_ENABLED` toggle
+- ✅ Migration `0002_rate_limits.sql` — table + **atomic `check_rate_limit(sid, session_limit,
+  daily_limit)` RPC** (limits passed from env → change caps with no redeploy). ⬜ owner to apply
+- ✅ `services/rate_limit.py` (`check_and_consume` + `next_utc_midnight`) wired into `chat.py`
+  before provider calls; **429** JSON `{error,limit,message,reset_at}`; fail-open on limiter error
+- ✅ Request-size guard: `ChatRequest.history` ≤20 items, `Message.content` ≤4000 chars → 422
+- ✅ Config: `rate_limit_enabled`, `session_question_limit`, `daily_question_limit` (env) + `.env.example`
+- ✅ Tests (TDD): 5 unit (`test_rate_limit.py`) + 4 integration (429 session/daily, providers-not-
+  called, fail-open, oversized history) — **19 backend tests green**
 
 ### Phase 7 — Leads + admin API
 - ⬜ `leads.py` + `notifier.py` (ABC + DbNotifier)
@@ -160,8 +169,8 @@ Status key: ✅ done · 🟡 in progress · ⬜ not started
 - ✅ Deploy config prepared: `backend/Dockerfile` + `.dockerignore`; cross-site cookie
   (`COOKIE_SAMESITE`/`COOKIE_SECURE`) + `ALLOWED_ORIGIN_REGEX` in `config.py`/`main.py`/`chat.py`;
   `frontend/vercel.json`; `DEPLOY.md` runbook
-- ⬜ Backend on Render (owner: create Docker service + env — runbook step 1)
-- ⬜ Frontend on Vercel (owner: import repo, set `VITE_API_BASE` — runbook step 2)
+- ✅ Backend on Render (Docker; `me-as-a-service.onrender.com`, health green)
+- ✅ Frontend on Vercel (`me-as-a-service.vercel.app`; `VITE_API_BASE` → Render; both return 200)
 - ⬜ Custom domain
 - ⬜ End-to-end smoke test (PRD §6 flows) after deploy
 - ⚠️ **No rate limiting yet (Phase 6)** — public URL = uncapped provider spend; gate before wide sharing
@@ -255,3 +264,22 @@ Append a short entry each session: date — what changed — next step.
   `DEPLOY.md` runbook. **Verified:** `uv run pytest` 10 pass, `npm run build` green. **Owner to
   do (needs your logins):** run the DEPLOY.md steps (Render service + Vercel import + env vars).
   **Risk flagged:** no rate limiting yet (Phase 6) → cap before making the URL public.
+- **2026-07-12 (backend deployed + guardrails designed)** — Backend live on Render
+  (`me-as-a-service.onrender.com`, Docker, health green after fixing Root Directory=`backend`
+  + Health Check Path=`/api/health`). Brainstormed Phase 6 guardrails (basic/cost-first;
+  per-session 10/day + global daily 100/day, both UTC-reset; increment-before-stream;
+  Supabase-backed). Confirmed cost math with live Haiku pricing ($1/$5 per 1M): ~$0.008/worst
+  request → $0.80/day ceiling at 100-cap → $5 lasts ~6 days under sustained abuse (unbounded
+  without it). Wrote `RATE_LIMITING_SPEC.md` and a comprehensive repo `README.md` (project
+  overview + design-decision rationale, recruiter/engineer-facing). **Next:** implement Phase 6
+  (migration `0002` + `rate_limit.py`), then finish the Vercel frontend deploy.
+- **2026-07-12 (Phase 6 — rate limiting implemented ✅, TDD)** — Full stack went live
+  (`me-as-a-service.vercel.app` → Render, both 200). Then built the guardrails test-first:
+  `0002_rate_limits.sql` (table + atomic `check_rate_limit` RPC taking limits as params →
+  **env-tunable caps with no redeploy**), `services/rate_limit.py` (`check_and_consume` +
+  `next_utc_midnight`), wired into `chat.py` before provider calls (429 JSON contract, cookie on
+  429 too, **fail-open** on limiter error), request-size guard on `history`. Config +
+  `.env.example`: `RATE_LIMIT_ENABLED` toggle + `SESSION_QUESTION_LIMIT`/`DAILY_QUESTION_LIMIT`.
+  **19 backend tests green** (5 unit + 4 new integration, providers mocked). **Owner action:** run
+  `0002_rate_limits.sql` in Supabase, then the tiny-cap manual test (see spec §verification).
+  **Next:** apply migration + live smoke test; agentic lead capture (Phase 7).

@@ -36,6 +36,12 @@ class Settings(BaseSettings):
     retrieval_top_k: int = 5   # final fused chunks
     rrf_k: int = 60            # RRF constant
 
+    # Rate limiting — all env-tunable so limits can be changed without a redeploy.
+    # Both caps reset at UTC midnight. The global cap is the hard ceiling on spend.
+    rate_limit_enabled: bool = True
+    session_question_limit: int = 10   # per session (sid cookie) per UTC day
+    daily_question_limit: int = 100    # global per UTC day
+
     # HTTP / CORS — comma-separated allowed frontend origins (cookies need explicit
     # origins + allow_credentials, so "*" won't work).
     allowed_origins: str = "http://localhost:5173,http://localhost:3000"

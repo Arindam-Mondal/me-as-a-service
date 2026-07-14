@@ -2,16 +2,17 @@
 
 Arindam Mondal is a Lead Full Stack Developer based in Bangalore, India, with 12+ years
 of experience building enterprise-grade applications across the Insurance, Retail, and
-FinTech domains. He currently leads development of a next-generation enterprise fraud
-detection platform at FICO.
+FinTech domains. He is currently a Lead Engineer on the team building FICO's
+next-generation enterprise platform, where fraud detection is one of several use cases.
 
 ## Professional Summary
 
 Results-driven Lead Full Stack Developer with 12+ years of experience designing and
 delivering enterprise-grade applications. Proficient in Angular, React, Java, and Spring
 Boot, with a strong track record across the Insurance, Retail, and FinTech domains.
-Currently leading development of a next-generation enterprise fraud detection platform at
-FICO. Passionate about leveraging emerging AI tools — including Claude Code and MCP server
+Currently a Lead Engineer on FICO's next-generation enterprise platform team, building
+reusable components and micro frontends that other capabilities reuse across the platform.
+Passionate about leveraging emerging AI tools — including Claude Code and MCP server
 development — to boost engineering productivity.
 
 ## Technical Skills
@@ -24,16 +25,18 @@ AI & Emerging: Claude Code, MCP server development, AI-assisted development, RAG
 workflows, Agentic AI.
 Other: Agile/Scrum, system design, enterprise architecture.
 
-## Current Role — Lead Software Developer at FICO (Oct 2023 – Present)
+## Current Role — Lead Engineer at FICO (Oct 2023 – Present)
 
-Arindam leads the architecture and development of a next-generation enterprise fraud
-detection platform targeting multiple banks and financial institutions. He is building
-the platform from the ground up using the latest version of Angular for the frontend and
-Java Spring Boot for backend microservices. He designs scalable, modular systems capable
-of detecting diverse fraud use cases across enterprise environments, collaborates with
-cross-functional teams to define the platform roadmap, technical standards, and delivery
-milestones, and actively integrates AI-assisted development workflows using Claude Code to
-improve team productivity.
+Arindam is part of the team building FICO's next-generation enterprise platform, which
+serves multiple capabilities for banks and financial institutions — fraud detection is one
+of several use cases the platform supports. As a Lead Engineer, he builds reusable
+components that other capabilities consume, helping teams reuse shared building blocks
+rather than rebuild them and reducing duplicate work across the platform. He builds micro
+frontends that let users author decision logic across different places using a Python-like
+syntax, using the latest version of Angular for the frontend and Java Spring Boot for
+backend microservices. He collaborates with cross-functional teams on technical standards
+and delivery, and actively integrates AI-assisted development workflows using Claude Code
+and MCP tools to improve team productivity.
 
 ## Experience — Senior Software Engineer at Cognizant Technology Solutions (Jul 2019 – Oct 2023)
 
@@ -47,8 +50,9 @@ team of 10+ engineers.
 
 ## Experience — Senior Software Developer at Mindfire Solutions (Jan 2017 – Jul 2019)
 
-Arindam developed and maintained "Cougar", a proprietary low-code workflow automation
-framework adopted by multiple small and mid-sized businesses. He digitised manual,
+Arindam was part of the team that built "Cougar", a proprietary low-code workflow
+automation framework adopted by multiple small and mid-sized businesses, where he
+contributed new features and enhancements to the product. His work helped digitise manual,
 paper-based workflows, driving a 40–60% improvement in productivity and turnaround time
 for clients. He built scalable, configurable modules that let businesses model their
 processes without heavy custom development, and worked directly with clients to capture
@@ -73,11 +77,11 @@ University of Technology), graduated 2013, with a CGPA of 8.24 / 10.
 
 Across his career Arindam has repeatedly delivered measurable impact. At Cognizant
 (7-Eleven, US Retail) he increased operational turnaround speed by 40% and reduced
-infrastructure costs by 30%. At Mindfire, his "Cougar" low-code framework drove 40–60%
-productivity gains for clients. At Infosys, he achieved a 30% cost reduction migrating
-legacy mainframe systems to modern web applications. He has built multiple enterprise
-platforms from the ground up, including the next-generation fraud detection platform he
-currently leads at FICO.
+infrastructure costs by 30%. At Mindfire, his contributions to the "Cougar" low-code
+framework helped drive 40–60% productivity gains for clients. At Infosys, he achieved a
+30% cost reduction migrating legacy mainframe systems to modern web applications. He has
+worked across multiple enterprise platforms, and at FICO he builds the reusable components
+and micro frontends that power the company's next-generation enterprise platform.
 
 ## AI & Side Projects
 

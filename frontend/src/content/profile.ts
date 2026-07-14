@@ -8,7 +8,8 @@ export const profile = {
   initials: "AM",
   headline: "Lead Full Stack Developer · building agentic AI & RAG",
   avatar: "/avatar.jpg", // owner to supply; falls back to initials in a doodle ring
-  bio: "I am a Lead AI/ML Engineer at FICO with over 12 years of experience shipping enterprise-grade platforms. Building multi-purpose next-gen systems, treat me as your technical co-pilot—I only know what I've been told about our tech stack, platform architecture, and industry standards.",
+  bio: "I'm a Lead Engineer at FICO with over 12 years of experience shipping enterprise-grade platforms, with a full-stack background across the stack. Currently building Agentic AI capabilities and RAG systems for next-gen, multi-purpose platforms.",
+  bioHighlights: ["Agentic AI", "RAG"], // terms given the marker-swipe highlight in ProfilePanel
   socials: [
     { kind: "github", href: "https://github.com/Arindam-Mondal", label: "GitHub" },
     { kind: "linkedin", href: "https://linkedin.com/in/amond", label: "LinkedIn" },
@@ -16,7 +17,7 @@ export const profile = {
   starters: [
     "What are Arindam's skills?",
     "What is he building at FICO?",
-    "Tell me about the Cougar low-code framework.",
+    "What impact has he made in his work?",
     "What is he looking for next?",
   ],
 } as const;

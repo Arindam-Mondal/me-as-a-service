@@ -225,6 +225,42 @@ p {
   margin-top: var(--s-3);
   max-width: 46ch;
 }
+
+/* Marker-swipe highlight — a hard-edged Riso-vermilion stroke behind ink text.
+   Vermilion is a fill here, never the text, so it stays WCAG AA on paper. */
+.mark {
+  position: relative;
+  background: transparent; /* override the browser default yellow */
+  color: var(--ink);
+  font-weight: 700;
+  white-space: nowrap;
+  padding: 0 0.1em;
+}
+.mark::before {
+  content: "";
+  position: absolute;
+  inset: 0.14em -0.06em 0.02em;
+  z-index: -1; /* behind the ink text, above the paper panel */
+  background: var(--accent);
+  transform: rotate(-1.4deg);
+  transform-origin: left center;
+  clip-path: inset(0 0 0 0);
+  animation: mark-swipe var(--dur-slow) var(--ease-out) both;
+  animation-delay: calc(var(--mark-i, 0) * 140ms);
+}
+@keyframes mark-swipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mark::before {
+    animation: none;
+  }
+}
 .profile__actions {
   display: flex;
   flex-wrap: wrap;

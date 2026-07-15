@@ -15,7 +15,7 @@
   Riso-Vermilion `#FF4D2E` accent, hand-drawn doodles; Shantell Sans + Hanken Grotesk; mobile-first,
   light-only. Reusable theme skill: [`.claude/skills/zine-theme/SKILL.md`](./.claude/skills/zine-theme/SKILL.md).
   Build UI via the `impeccable` + `frontend-design` skills.
-- **Last updated:** 2026-07-12
+- **Last updated:** 2026-07-14
 
 ---
 
@@ -29,8 +29,10 @@
   (BM25-style lexical), fused via **Reciprocal Rank Fusion (RRF)**.
 - **Admin auth:** Supabase Auth (single owner).
 - **Rate limits:** per-session (default 10) + global daily (default 100), both env-configurable.
-- **Notifications:** stored in DB + private `/admin` dashboard. `Notifier` interface so
-  email/Slack can be added later (v1 sink = DB).
+- **Notifications:** every lead is stored in Supabase (`leads` table = source of truth) and the
+  owner is emailed via **Gmail SMTP** (best-effort background task). `Notifier` interface keeps
+  callers decoupled; v1 concrete sink = `EmailNotifier` (Slack/etc. later). Private `/admin`
+  dashboard + admin API deferred to a later slice.
 - **Ingestion:** Markdown files in `content/` + `scripts/ingest.py`.
 
 > ⚠️ **Secrets boundary:** Anthropic/Voyage/Supabase **service-role** keys are
@@ -105,7 +107,7 @@ Status key: ✅ done · 🟡 in progress · ⬜ not started
 ### Phase 2 — Supabase schema  *(documents only in Slice 1)*
 - ✅ Migration written: `documents` (+ pgvector HNSW, FTS GIN) — `0001_init.sql`
 - ✅ **Applied:** `0001_init.sql` run in Supabase SQL Editor (documents + hybrid_search live)
-- ⬜ Migration: `leads`
+- 🟡 Migration: `leads` — **written** (`0003_leads.sql`, table + created_at index + RLS-on/no-policies); ⬜ owner to apply in Supabase SQL editor
 - 🟡 Migration: `rate_limits` — **written** (`0002_rate_limits.sql`, table + `check_rate_limit` RPC); ⬜ owner to apply in Supabase SQL editor
 - ⬜ RLS policies on all tables *(deferred — backend uses service-role key)*
 - ✅ `hybrid_search` RPC (vector + FTS + RRF) written in `0001_init.sql`
@@ -141,11 +143,27 @@ Status key: ✅ done · 🟡 in progress · ⬜ not started
 - ✅ Tests (TDD): 5 unit (`test_rate_limit.py`) + 4 integration (429 session/daily, providers-not-
   called, fail-open, oversized history) — **19 backend tests green**
 
-### Phase 7 — Leads + admin API
-- ⬜ `leads.py` + `notifier.py` (ABC + DbNotifier)
-- ⬜ `POST /api/leads` (validation)
-- ⬜ `GET/PATCH /api/admin/leads` (JWT-gated, OWNER_EMAIL)
-- ⬜ Tests: insert, validation, auth required
+### Phase 7 — Leads + admin API  *(store + email done; admin/agentic deferred)*
+- ✅ `services/leads.py` (`persist_lead` → Supabase insert) + `services/notifier.py`
+  (`Notifier` ABC + `EmailNotifier` via Gmail SMTP + `NullNotifier`; `get_notifier()` factory)
+- ✅ `POST /api/leads` (`routers/leads.py`) — validates `LeadRequest` (422 on bad email/blank
+  name), inserts the lead, then **best-effort emails the owner in a BackgroundTask** (fail-open;
+  a 500 is only returned if the DB insert itself fails). Registered in `main.py`.
+- ✅ Config: `gmail_address`/`gmail_app_password`/`lead_notify_to` (+ `lead_notify_recipient`
+  property) + `.env.example`. Missing creds ⇒ `NullNotifier` no-op (leads still stored).
+- ✅ Frontend: `lib/postLead.ts` (mirrors `streamChat` API-base) + `ConnectForm` wired to POST
+  `{name,email,message}` with submitting/error states.
+- ✅ Tests (TDD): backend `test_leads_api.py` (5) + `test_notifier.py` (4) → **28 backend green**;
+  frontend `postLead.test.ts` (2) + `ConnectForm.test.tsx` (2) → **9 frontend green**.
+- ⚠️ **Note — naming deviation:** the spec's planned "DbNotifier" is superseded. The DB write is
+  the *persistence* step (`leads.py`); the `Notifier` v1 concrete sink is **email**
+  (`EmailNotifier`). The ABC remains for future Slack/etc.
+- ⬜ **Deferred to a later slice (owner's call):** `GET/PATCH /api/admin/leads` (JWT-gated,
+  OWNER_EMAIL) + Supabase Auth. Day-to-day = email + the Supabase table editor. Also deferred:
+  the agentic `capture_lead` tool/SSE event (see Phase 5) that would auto-open the form.
+- ⚠️ **Owner setup before deploy:** apply `0003_leads.sql`; enable Google 2-Step Verification;
+  create an app password (myaccount.google.com/apppasswords); set `GMAIL_ADDRESS` +
+  `GMAIL_APP_PASSWORD` (+ optional `LEAD_NOTIFY_TO`) in `backend/.env` and Render env vars.
 
 ### Phase 8 — Frontend (public)  *(theme + spec locked — see `UI_TECHNICAL_SPEC.md`)*
 - ✅ Scaffold (Vite+TS, `@fontsource-variable` Shantell+Hanken, tokens.css/global.css,
@@ -283,3 +301,19 @@ Append a short entry each session: date — what changed — next step.
   **19 backend tests green** (5 unit + 4 new integration, providers mocked). **Owner action:** run
   `0002_rate_limits.sql` in Supabase, then the tiny-cap manual test (see spec §verification).
   **Next:** apply migration + live smoke test; agentic lead capture (Phase 7).
+- **2026-07-14 (Phase 7 — lead capture: store + email ✅, TDD)** — Implemented the manual
+  connect-form path: lead is stored in Supabase **and** the owner is emailed on Gmail. Wrote
+  `0003_leads.sql` (leads table + created_at index + RLS-on/no-policies, PII-safe), added
+  Gmail SMTP config (`gmail_address`/`gmail_app_password`/`lead_notify_to` + `.env.example`),
+  `LeadRequest` model (name/email regex/message/conversation_context, 422 on bad input),
+  `services/leads.py` (`persist_lead`), `services/notifier.py` (`Notifier` ABC + `EmailNotifier`
+  via stdlib `smtplib`+STARTTLS + `NullNotifier`; **fail-open** on missing creds/SMTP error),
+  `routers/leads.py` (`POST /api/leads` → insert then email in a `BackgroundTask`; 201/500).
+  Frontend: `lib/postLead.ts` + wired `ConnectForm` (submitting/error states, real POST).
+  **Verified:** `uv run pytest` **28 green** (9 new), `npm test` **9 green** (4 new, incl.
+  success + failure paths), `npm run build` green. Debugged a vitest false-positive where
+  `mockReset()` + `mockRejectedValue` reported a benign unhandled rejection (component's catch
+  is correct — proved via probe); fixed the test, not the code. **Decisions (owner):** email via
+  Gmail SMTP; admin API + Supabase Auth + agentic `capture_lead` deferred. **Owner actions:**
+  apply `0003_leads.sql`; set up Google app password + the 3 Gmail env vars (see Phase 7 notes).
+  **Next:** owner applies migration + fills creds → live end-to-end smoke test (row + email).

@@ -54,9 +54,19 @@ class Settings(BaseSettings):
     cookie_samesite: str = "lax"  # "lax" | "none" | "strict"
     cookie_secure: bool = False
 
+    # Lead notifications — Gmail SMTP (app password). All optional: if the address or
+    # app password is missing, the emailer no-ops (fail-open) and leads are still stored.
+    gmail_address: str | None = None
+    gmail_app_password: str | None = None
+    lead_notify_to: str | None = None  # recipient; defaults to gmail_address when unset
+
     @property
     def allowed_origins_list(self) -> list[str]:
         return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+
+    @property
+    def lead_notify_recipient(self) -> str | None:
+        return self.lead_notify_to or self.gmail_address
 
 
 settings = Settings()  # type: ignore[call-arg]

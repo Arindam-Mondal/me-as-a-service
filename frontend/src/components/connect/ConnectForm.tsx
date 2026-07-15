@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Sparkle } from "../doodles";
+import { postLead } from "../../lib/postLead";
 
 type Props = {
   open: boolean;
@@ -8,13 +9,15 @@ type Props = {
 
 const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
-/** Native <dialog> connect form. Client-side validation now; POST /api/leads is a later slice. */
+/** Native <dialog> connect form. Validates client-side, then POSTs to /api/leads. */
 export function ConnectForm({ open, onClose }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [note, setNote] = useState("");
   const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
@@ -24,20 +27,31 @@ export function ConnectForm({ open, onClose }: Props) {
     if (!open && dlg.open) dlg.close();
   }, [open]);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const next: typeof errors = {};
     if (!name.trim()) next.name = "Please add your name.";
     if (!emailOk(email)) next.email = "Please enter a valid email.";
     setErrors(next);
     if (Object.keys(next).length) return;
-    // TODO(Phase 7): POST { name, email, note } to `${VITE_API_BASE}/api/leads`.
-    setDone(true);
+
+    setSendError(null);
+    setSubmitting(true);
+    try {
+      await postLead({ name: name.trim(), email: email.trim(), message: note.trim() || undefined });
+      setDone(true);
+    } catch {
+      setSendError("Couldn't send that — please try again in a moment.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const close = () => {
     setDone(false);
     setErrors({});
+    setSendError(null);
+    setSubmitting(false);
     onClose();
   };
 
@@ -62,7 +76,7 @@ export function ConnectForm({ open, onClose }: Props) {
               />{" "}
               Thanks!
             </h2>
-            <p>Arindam will follow up personally. (Lead delivery ships in a later slice.)</p>
+            <p>Your details are on their way — Arindam will follow up personally.</p>
             <div className="dialog__actions" style={{ justifyContent: "flex-end" }}>
               <button type="button" className="btn" onClick={close}>
                 Done
@@ -113,12 +127,23 @@ export function ConnectForm({ open, onClose }: Props) {
               />
             </div>
 
+            {sendError && (
+              <p className="field__err" role="alert" style={{ marginTop: "var(--s-3)" }}>
+                {sendError}
+              </p>
+            )}
+
             <div className="dialog__actions">
-              <button type="button" className="btn btn--ghost" onClick={close}>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={close}
+                disabled={submitting}
+              >
                 Cancel
               </button>
-              <button type="submit" className="btn">
-                Send it
+              <button type="submit" className="btn" disabled={submitting}>
+                {submitting ? "Sending…" : "Send it"}
               </button>
             </div>
           </form>
